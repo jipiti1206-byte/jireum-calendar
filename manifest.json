@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "지름 캘린더 for AmiAmi",
+  "short_name": "지름 캘린더",
+  "version": "2.1.0",
+  "version_name": "20261008003",
+  "description": "AmiAmi 북마크 전체를 발매일순으로 정리해 보여주고, 이미지 포함 엑셀로 내보냅니다.",
+  "icons": { "16": "icons/icon16.png", "32": "icons/icon32.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "permissions": ["scripting"],
+  "host_permissions": ["https://www.amiami.com/*", "https://img.amiami.com/*"],
+  "background": { "service_worker": "bg.js" },
+  "content_scripts": [
+    { "matches": ["https://www.amiami.com/*"], "js": ["content.js"], "css": ["panel.css"], "run_at": "document_idle" }
+  ]
+}
