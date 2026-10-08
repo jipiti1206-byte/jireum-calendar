@@ -3,7 +3,7 @@
 AmiAmi 북마크(위시리스트)를 **발매일순**으로 정리해서 보여주는 크롬 확장 프로그램입니다.
 "곧 사야 하는 거"가 한눈에 보이고, 사진이 들어간 **엑셀로 내보내기**도 됩니다.
 
-<img src="docs/screenshot.jpg" width="420">
+<img src="screenshot.jpg" width="420">
 
 ## 기능
 
