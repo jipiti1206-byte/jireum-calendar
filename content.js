@@ -1,4 +1,4 @@
-// 지름 캘린더 for AmiAmi (20261008003)
+// 지름 캘린더 for AmiAmi (20261118_001)
 (() => {
   if (window.__amsLoaded) return;
   window.__amsLoaded = true;
@@ -10,6 +10,25 @@
   const isWishlist = () => /\/wishlist/.test(location.pathname);
   const fmt = n => n.toLocaleString('ja-JP');
   let running = false;
+  let customs = null;
+  let customsError = '';
+  const CUSTOMS_URL = 'https://www.customs.go.kr/kcs/ad/tax/BuyTaxCalculation.do';
+  const send = m => new Promise(res => { try { chrome.runtime.sendMessage(m, r => res(r || { ok: false })); } catch (e) { res({ ok: false, err: String(e) }); } });
+  async function refreshCustoms() {
+    const result = await send({ type: 'customsRates' });
+    customs = result.ok ? result : null;
+    customsError = result.ok ? '' : (result.err || '조회 실패');
+    if (lastData.length) render(lastData);
+  }
+  function shipping() { return Math.max(0, Number(load().shipping) || 0); }
+  function taxFor(price) {
+    if (!customs || !Number.isFinite(price)) return null;
+    if (price <= customs.limit) return { taxable: false, total: 0 };
+    const base = Math.round((price + shipping()) * customs.jpy);
+    const duty = Math.round(base * .08);
+    const vat = Math.round((base + duty) * .10);
+    return { taxable: true, total: duty + vat };
+  }
 
   // ---------- 수집 ----------
   function scrapePage() {
@@ -119,20 +138,25 @@
       <div class="ams-head"><span class="ams-title">북마크 발매일순</span>
         <button data-a="xlsx" title="이미지 포함 엑셀로 저장">엑셀</button><button data-a="reload">새로고침</button><button data-a="min">접기</button><button data-a="close">✕</button></div>
       <div class="ams-sum"></div>
+      <div class="ams-customs"></div>
       <div class="ams-tools">
         <label><input type="checkbox" data-f="hideOut"> 품절 숨기기</label>
         <label><input type="checkbox" data-f="hideRel"> 발매중 숨기기</label>
+        <label>국제배송비 <input type="number" min="0" step="100" data-f="shipping" placeholder="0" aria-label="상품당 국제배송비 엔"></label>
       </div>
       <div class="ams-body"><div class="ams-msg">불러오는 중…</div></div>`;
     document.body.appendChild(root);
     const pref = load();
     root.querySelectorAll('[data-f]').forEach(cb => { cb.checked = !!pref[cb.dataset.f]; cb.onchange = () => { pref[cb.dataset.f] = cb.checked; save(pref); render(lastData); }; });
+    const ship = root.querySelector('[data-f="shipping"]');
+    ship.value = pref.shipping || '';
+    ship.oninput = () => { const p = load(); p.shipping = ship.value; save(p); render(lastData); };
     if (pref.min) root.classList.add('ams-min');
     root.querySelector('[data-a="min"]').textContent = pref.min ? '펼치기' : '접기';
     root.querySelector('.ams-head').onclick = e => {
       const a = e.target.dataset.a;
       if (a === 'close') root.remove();
-      if (a === 'reload') run(true);
+      if (a === 'reload') { refreshCustoms(); run(true); }
       if (a === 'xlsx') exportExcel(e.target);
       if (a === 'min') { const p = load(); p.min = root.classList.toggle('ams-min'); save(p); e.target.textContent = p.min ? '펼치기' : '접기'; }
     };
@@ -161,6 +185,9 @@
       <div><span>지금 구매 가능 (${rel.length})</span><b>${fmt(sum(rel))}엔</b></div>
       <div><span>${SOON_MONTHS}개월 내 발매 (${soon.length})</span><b>${fmt(sum(soon))}엔</b></div>
       <div><span>전체 (품절 ${list.length - avail.length} 제외)</span><b>${fmt(sum(avail))}엔</b></div>`;
+    r.querySelector('.ams-customs').innerHTML = customs
+      ? `<a href="${CUSTOMS_URL}" target="_blank" rel="noopener noreferrer">관세청 기준</a> · 면세 한도 ${fmt(customs.limit)}엔 이하 · 초과 상품은 예상 관세 8% + 부가세 10% <span class="ams-customs-note">(상품별 개별 배송 가정${shipping() ? `, 배송비 ${fmt(shipping())}엔` : ', 배송비 미입력'})</span>`
+      : `관세청 면세 기준 ${customsError ? `조회 실패: ${esc(customsError)}` : '조회 중…'} · <a href="${CUSTOMS_URL}" target="_blank" rel="noopener noreferrer">직접 확인</a>`;
 
     const shown = list.filter(i => !(pref.hideOut && i.soldOut) && !(pref.hideRel && i.released));
     let html = '', lastMonth = '';
@@ -180,13 +207,12 @@
             <span class="ams-tag">${esc(STATUS_KO[i.status] || i.status)}</span>
             ${i.soldOut ? '<span class="ams-tag x">품절</span>' : ''}${i.preowned ? '<span class="ams-tag">중고</span>' : ''}</div>
         </div>
-        <div class="ams-price">${i.price ? fmt(i.price) + '엔' : '-'}</div></div>`;
+        <div class="ams-price">${i.price ? fmt(i.price) + '엔' : '-'}${(() => { const t = taxFor(i.price); return t ? `<small class="ams-tax ${t.taxable ? 'due' : 'free'}">${t.taxable ? `과세 예상 · 약 ${fmt(t.total)}원` : '면세 예상'}</small>` : ''; })()}</div></div>`;
     });
     r.querySelector('.ams-body').innerHTML = html || '<div class="ams-msg">표시할 항목이 없어요</div>';
   }
 
   // ---------- 엑셀 내보내기 ----------
-  const send = m => new Promise(res => { try { chrome.runtime.sendMessage(m, r => res(r || { ok: false })); } catch (e) { res({ ok: false, err: String(e) }); } });
   const ymd = (d = new Date()) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 
   async function exportExcel(btn) {
@@ -214,7 +240,7 @@
       const ws = wb.addWorksheet('북마크_발매일순', { views: [{ state: 'frozen', ySplit: 1 }] });
       ws.columns = [
         { header: 'No', width: 5 }, { header: '이미지', width: 15 }, { header: '발매일', width: 12 }, { header: '상품명', width: 58 },
-        { header: '가격(JPY)', width: 11 }, { header: '판매상태', width: 10 }, { header: '재고', width: 9 }, { header: '남은 기간', width: 10 }, { header: '링크', width: 7 }
+        { header: '가격(JPY)', width: 11 }, { header: '판매상태', width: 10 }, { header: '재고', width: 9 }, { header: '남은 기간', width: 10 }, { header: '과세 예상', width: 13 }, { header: '예상 세액(KRW)', width: 17 }, { header: '링크', width: 7 }
       ];
       const line = { style: 'thin', color: { argb: 'FFBFBFBF' } };
       const border = { top: line, bottom: line, left: line, right: line };
@@ -223,8 +249,9 @@
 
       list.forEach((i, n) => {
         const url = `https://www.amiami.com/eng/detail/?gcode=${encodeURIComponent(i.code)}`;
+        const tax = taxFor(i.price);
         const row = ws.addRow([n + 1, '', i.pd.label, i.name, i.price, STATUS_KO[i.status] || i.status,
-          i.soldOut ? '품절' : '재고있음', i.released ? '발매됨' : `${i.diff}개월`, { text: '열기', hyperlink: url }]);
+          i.soldOut ? '품절' : '재고있음', i.released ? '발매됨' : `${i.diff}개월`, tax ? (tax.taxable ? '과세' : '면세') : '확인 필요', tax ? tax.total : null, { text: '열기', hyperlink: url }]);
         row.height = 72;
         const color = i.soldOut ? 'FFD9D9D9' : i.released ? 'FFE2EFDA' : i.soon ? 'FFFCE4D6' : null;
         row.eachCell({ includeEmpty: true }, (c, col) => {
@@ -233,14 +260,15 @@
           if (color) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: color } };
         });
         row.getCell(5).numFmt = '#,##0';
-        row.getCell(9).font = { color: { argb: 'FF0563C1' }, underline: true };
+        row.getCell(10).numFmt = '#,##0';
+        row.getCell(11).font = { color: { argb: 'FF0563C1' }, underline: true };
         if (imgs[i.img]) {
           const id = wb.addImage({ base64: imgs[i.img], extension: 'jpeg' });
           ws.addImage(id, { tl: { col: 1.08, row: row.number - 1 + 0.04 }, ext: { width: 92, height: 92 } });
         }
       });
       const last = list.length + 1;
-      ws.autoFilter = { from: 'A1', to: `I${last}` };
+      ws.autoFilter = { from: 'A1', to: `K${last}` };
       ws.addRow([]);
       [['합계 (품절 제외)', `SUMIFS(E2:E${last},G2:G${last},"재고있음")`],
        ['지금 구매 가능', `SUMIFS(E2:E${last},G2:G${last},"재고있음",H2:H${last},"발매됨")`]].forEach(([l, f]) => {
@@ -250,6 +278,7 @@
       });
       ws.addRow([]);
       ws.addRow(['', '', '', `색: 초록=발매됨 / 주황=${SOON_MONTHS}개월 내 발매 / 회색=품절 · ${ymd()} 기준`]);
+      ws.addRow(['', '', '', customs ? `관세청 면세 한도 ${fmt(customs.limit)}엔 · 상품별 개별 배송 가정 · 국제배송비 ${fmt(shipping())}엔 · 예상 관세 8% + 부가세 10%` : '관세청 면세 기준 조회 실패 · 과세 여부 확인 필요']);
 
       const buf = await wb.xlsx.writeBuffer();
       const a = document.createElement('a');
@@ -268,6 +297,7 @@
     try {
       ensureRoot();
       setStatus('수집 중…');
+      if (!customs) refreshCustoms();
       const data = await collectAll();
       if (!data.length) setStatus('북마크 목록을 찾지 못했어요 (로그인 상태 확인)');
       else render(data);

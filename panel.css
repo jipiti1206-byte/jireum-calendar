@@ -1,6 +1,6 @@
 #ams-root{position:fixed;top:70px;right:16px;width:560px;max-height:calc(100vh - 90px);z-index:2147483000;background:#fff;color:#222;border:1px solid #d0d7e2;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);font:13px/1.4 -apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;display:flex;flex-direction:column;overflow:hidden}
 #ams-root.ams-min{width:auto;max-height:none}
-#ams-root.ams-min .ams-body,#ams-root.ams-min .ams-sum,#ams-root.ams-min .ams-tools{display:none}
+#ams-root.ams-min .ams-body,#ams-root.ams-min .ams-sum,#ams-root.ams-min .ams-tools,#ams-root.ams-min .ams-customs{display:none}
 .ams-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#305496;color:#fff;font-weight:700}
 .ams-head .ams-title{flex:1}
 .ams-head button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px}
@@ -9,8 +9,12 @@
 .ams-sum div{background:#fff;border:1px solid #e3e7ee;border-radius:6px;padding:6px 8px}
 .ams-sum b{display:block;font-size:15px}
 .ams-sum span{font-size:11px;color:#666}
+.ams-customs{padding:7px 12px;border-bottom:1px solid #e6e9ef;background:#fff8ed;font-size:11px;line-height:1.5}
+.ams-customs a{color:#1a3e8a}
+.ams-customs-note{color:#666}
 .ams-tools{display:flex;gap:12px;align-items:center;padding:6px 12px;border-bottom:1px solid #e6e9ef;font-size:12px;color:#444}
 .ams-tools label{cursor:pointer;display:flex;align-items:center;gap:4px}
+.ams-tools input[type=number]{width:65px;padding:2px 4px;border:1px solid #cdd5e0;border-radius:4px;font:inherit}
 .ams-body{overflow-y:auto;flex:1}
 .ams-month{position:sticky;top:0;background:#eef2f8;padding:4px 12px;font-weight:700;font-size:12px;color:#305496;border-bottom:1px solid #dde3ee}
 .ams-row{display:flex;gap:10px;padding:8px 12px;border-bottom:1px solid #eef0f4;border-left:4px solid transparent;align-items:center}
@@ -25,5 +29,7 @@
 .ams-tag{padding:1px 6px;border-radius:9px;background:#e8ecf3}
 .ams-tag.g{background:#dff0d4;color:#2e6b14}.ams-tag.o{background:#fde3d2;color:#a3460c}.ams-tag.x{background:#ddd;color:#555}
 .ams-price{font-weight:700;white-space:nowrap;text-align:right;min-width:82px}
+.ams-tax{display:block;margin-top:4px;font-size:11px;font-weight:600}
+.ams-tax.due{color:#af361b}.ams-tax.free{color:#28703a}
 .ams-msg{padding:24px;text-align:center;color:#666}
 .ams-head button:disabled{opacity:.5;cursor:wait}

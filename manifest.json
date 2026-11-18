@@ -3,8 +3,8 @@
   "name": "지름 캘린더 for AmiAmi",
   "short_name": "지름 캘린더",
   "version": "2.1.0",
-  "version_name": "20261008003",
-  "description": "AmiAmi 북마크 전체를 발매일순으로 정리해 보여주고, 이미지 포함 엑셀로 내보냅니다.",
+  "version_name": "20261118_001",
+  "description": "AmiAmi 북마크를 발매일순으로 정리하고 관세청 면세 기준과 예상 세액을 표시합니다.",
   "icons": {
     "16": "icon16.png",
     "32": "icon32.png",
@@ -16,7 +16,8 @@
   ],
   "host_permissions": [
     "https://www.amiami.com/*",
-    "https://img.amiami.com/*"
+    "https://img.amiami.com/*",
+    "https://www.customs.go.kr/*"
   ],
   "background": {
     "service_worker": "bg.js"
