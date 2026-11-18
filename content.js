@@ -1,4 +1,4 @@
-// 지름 캘린더 for AmiAmi (20261118_001)
+// 지름 캘린더 for AmiAmi (20261118_002)
 (() => {
   if (window.__amsLoaded) return;
   window.__amsLoaded = true;
@@ -12,6 +12,7 @@
   let running = false;
   let customs = null;
   let customsError = '';
+  let summaryFilter = '';
   const CUSTOMS_URL = 'https://www.customs.go.kr/kcs/ad/tax/BuyTaxCalculation.do';
   const send = m => new Promise(res => { try { chrome.runtime.sendMessage(m, r => res(r || { ok: false })); } catch (e) { res({ ok: false, err: String(e) }); } });
   async function refreshCustoms() {
@@ -138,6 +139,7 @@
       <div class="ams-head"><span class="ams-title">북마크 발매일순</span>
         <button data-a="xlsx" title="이미지 포함 엑셀로 저장">엑셀</button><button data-a="reload">새로고침</button><button data-a="min">접기</button><button data-a="close">✕</button></div>
       <div class="ams-sum"></div>
+      <div class="ams-filter-bar" hidden><span></span><button type="button" data-a="showAll">전체 보기</button></div>
       <div class="ams-customs"></div>
       <div class="ams-tools">
         <label><input type="checkbox" data-f="hideOut"> 품절 숨기기</label>
@@ -148,6 +150,13 @@
     document.body.appendChild(root);
     const pref = load();
     root.querySelectorAll('[data-f]').forEach(cb => { cb.checked = !!pref[cb.dataset.f]; cb.onchange = () => { pref[cb.dataset.f] = cb.checked; save(pref); render(lastData); }; });
+    root.querySelector('.ams-sum').onclick = e => {
+      const button = e.target.closest('button[data-summary]');
+      if (!button) return;
+      summaryFilter = summaryFilter === button.dataset.summary ? '' : button.dataset.summary;
+      render(lastData);
+    };
+    root.querySelector('[data-a="showAll"]').onclick = () => { summaryFilter = ''; render(lastData); };
     const ship = root.querySelector('[data-f="shipping"]');
     ship.value = pref.shipping || '';
     ship.oninput = () => { const p = load(); p.shipping = ship.value; save(p); render(lastData); };
@@ -182,14 +191,20 @@
     const rel = avail.filter(i => i.released), soon = avail.filter(i => i.soon);
     r.querySelector('.ams-title').textContent = `북마크 발매일순 (${list.length})`;
     r.querySelector('.ams-sum').innerHTML = `
-      <div><span>지금 구매 가능 (${rel.length})</span><b>${fmt(sum(rel))}엔</b></div>
-      <div><span>${SOON_MONTHS}개월 내 발매 (${soon.length})</span><b>${fmt(sum(soon))}엔</b></div>
-      <div><span>전체 (품절 ${list.length - avail.length} 제외)</span><b>${fmt(sum(avail))}엔</b></div>`;
+      <button type="button" data-summary="released" aria-pressed="${summaryFilter === 'released'}"><span>지금 구매 가능 (${rel.length})</span><b>${fmt(sum(rel))}엔</b></button>
+      <button type="button" data-summary="soon" aria-pressed="${summaryFilter === 'soon'}"><span>${SOON_MONTHS}개월 내 발매 (${soon.length})</span><b>${fmt(sum(soon))}엔</b></button>
+      <button type="button" data-summary="available" aria-pressed="${summaryFilter === 'available'}"><span>전체 (품절 ${list.length - avail.length} 제외)</span><b>${fmt(sum(avail))}엔</b></button>`;
     r.querySelector('.ams-customs').innerHTML = customs
       ? `<a href="${CUSTOMS_URL}" target="_blank" rel="noopener noreferrer">관세청 기준</a> · 면세 한도 ${fmt(customs.limit)}엔 이하 · 초과 상품은 예상 관세 8% + 부가세 10% <span class="ams-customs-note">(상품별 개별 배송 가정${shipping() ? `, 배송비 ${fmt(shipping())}엔` : ', 배송비 미입력'})</span>`
       : `관세청 면세 기준 ${customsError ? `조회 실패: ${esc(customsError)}` : '조회 중…'} · <a href="${CUSTOMS_URL}" target="_blank" rel="noopener noreferrer">직접 확인</a>`;
 
-    const shown = list.filter(i => !(pref.hideOut && i.soldOut) && !(pref.hideRel && i.released));
+    const filterBar = r.querySelector('.ams-filter-bar');
+    filterBar.hidden = !summaryFilter;
+    if (summaryFilter) filterBar.querySelector('span').textContent = `선택한 합계의 상품만 표시 중`;
+    const shown = summaryFilter === 'released' ? rel
+      : summaryFilter === 'soon' ? soon
+      : summaryFilter === 'available' ? avail
+      : list.filter(i => !(pref.hideOut && i.soldOut) && !(pref.hideRel && i.released));
     let html = '', lastMonth = '';
     shown.forEach(i => {
       const mk = i.pd.y === 9999 ? '발매일 미정' : `${i.pd.y}년 ${i.pd.m}월`;

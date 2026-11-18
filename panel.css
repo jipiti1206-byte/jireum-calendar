@@ -1,14 +1,19 @@
 #ams-root{position:fixed;top:70px;right:16px;width:560px;max-height:calc(100vh - 90px);z-index:2147483000;background:#fff;color:#222;border:1px solid #d0d7e2;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.18);font:13px/1.4 -apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;display:flex;flex-direction:column;overflow:hidden}
 #ams-root.ams-min{width:auto;max-height:none}
-#ams-root.ams-min .ams-body,#ams-root.ams-min .ams-sum,#ams-root.ams-min .ams-tools,#ams-root.ams-min .ams-customs{display:none}
+#ams-root.ams-min .ams-body,#ams-root.ams-min .ams-sum,#ams-root.ams-min .ams-tools,#ams-root.ams-min .ams-customs,#ams-root.ams-min .ams-filter-bar{display:none}
 .ams-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#305496;color:#fff;font-weight:700}
 .ams-head .ams-title{flex:1}
 .ams-head button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px}
 .ams-head button:hover{background:rgba(255,255,255,.32)}
 .ams-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:10px 12px;border-bottom:1px solid #e6e9ef;background:#f6f8fb}
-.ams-sum div{background:#fff;border:1px solid #e3e7ee;border-radius:6px;padding:6px 8px}
+.ams-sum button{background:#fff;border:1px solid #e3e7ee;border-radius:6px;padding:6px 8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.ams-sum button:hover{border-color:#305496;background:#f5f8ff}
+.ams-sum button[aria-pressed=true]{border-color:#305496;background:#e8f0ff;box-shadow:inset 0 0 0 1px #305496}
 .ams-sum b{display:block;font-size:15px}
 .ams-sum span{font-size:11px;color:#666}
+.ams-filter-bar{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;background:#e8f0ff;color:#25477d;font-size:11px}
+.ams-filter-bar[hidden]{display:none}
+.ams-filter-bar button{border:0;background:transparent;color:#1a3e8a;text-decoration:underline;cursor:pointer;font:inherit}
 .ams-customs{padding:7px 12px;border-bottom:1px solid #e6e9ef;background:#fff8ed;font-size:11px;line-height:1.5}
 .ams-customs a{color:#1a3e8a}
 .ams-customs-note{color:#666}
